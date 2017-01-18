@@ -21,7 +21,110 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             Assert.IsNull(breaker.FindOpenCircuitContext(null));
         }
 
+        [Test]
+        public void NothingHappensWithInactiveRules()
+        {
+            var breaker = new CircuitBreaker(
+                new SimpleReader(new List<ConfigRule>
+                {
+                    new ConfigRule {IsActive = false},
+                    new ConfigRule {IsActive = false}
+                }), null, null);
+
+            Assert.IsNull(breaker.FindOpenCircuitContext(null));
+        }
+
+        [Test]
+        public void NothingHappensWithoutExistingContexts()
+        {
+            var breaker = new CircuitBreaker(
+                new SimpleReader(new List<ConfigRule>
+                {
+                    new ConfigRule {IsActive = true, RuleName = "rule1"},
+                    new ConfigRule {IsActive = true, RuleName = "rule2"}
+                }), null, null);
+
+            Assert.IsNull(breaker.FindOpenCircuitContext(null));
+        }
+
+        [Test]
+        public void NothingHappensWithContextThatDoesNotDesignateAnOpenCircuit()
+        {
+            var reader = new SimpleReader(new List<ConfigRule>
+            {
+                new ConfigRule {IsActive = true, RuleName = "rule1"},
+                new ConfigRule {IsActive = true, RuleName = "rule2"}
+            });
+
+            var breaker = new CircuitBreaker(reader, null, null);
+
+            breaker.Contexts.TryAdd(
+                breaker.GetRuleKey(null, reader.Rules[0]),
+                new CircuitBreakerContext {IsCircuitOpen = false, OpenUntil = DateTime.Now.AddDays(1)});
+
+            Assert.IsNull(breaker.FindOpenCircuitContext(null));
+        }
+
+        [Test]
+        public void NothingHappensWithContextThatDesignatesRuleThatHasLapsed()
+        {
+            var reader = new SimpleReader(new List<ConfigRule>
+            {
+                new ConfigRule {IsActive = true, RuleName = "rule1"},
+                new ConfigRule {IsActive = true, RuleName = "rule2"}
+            });
+
+            var breaker = new CircuitBreaker(reader, null, null);
+
+            breaker.Contexts.TryAdd(
+                breaker.GetRuleKey(null, reader.Rules[0]),
+                new CircuitBreakerContext { IsCircuitOpen = true, OpenUntil = DateTime.Now.AddDays(-1) });
+
+            Assert.IsNull(breaker.FindOpenCircuitContext(null));
+        }
+
+        [Test]
+        public void FindFirstOpenCircuit()
+        {
+            var reader = new SimpleReader(new List<ConfigRule>
+            {
+                new ConfigRule {IsActive = true, RuleName = "rule1"},
+                new ConfigRule {IsActive = true, RuleName = "rule2"}
+            });
+
+            var breaker = new CircuitBreaker(reader, null, null);
+
+            breaker.Contexts.TryAdd(
+                breaker.GetRuleKey(null, reader.Rules[0]),
+                new CircuitBreakerContext { IsCircuitOpen = true, OpenUntil = DateTime.Now.AddDays(1) });
+
+            Assert.AreSame(breaker.Contexts[breaker.GetRuleKey(null, reader.Rules[0])], breaker.FindOpenCircuitContext(null));
+        }
+
+        [Test]
+        public void FindNextOpenCircuit()
+        {
+            var reader = new SimpleReader(new List<ConfigRule>
+            {
+                new ConfigRule {IsActive = true, RuleName = "rule1"},
+                new ConfigRule {IsActive = true, RuleName = "rule2"}
+            });
+
+            var breaker = new CircuitBreaker(reader, null, null);
+
+            breaker.Contexts.TryAdd(
+                breaker.GetRuleKey(null, reader.Rules[0]),
+                new CircuitBreakerContext { IsCircuitOpen = false, OpenUntil = DateTime.Now.AddDays(1) });
+
+            breaker.Contexts.TryAdd(
+                breaker.GetRuleKey(null, reader.Rules[1]),
+                new CircuitBreakerContext { IsCircuitOpen = true, OpenUntil = DateTime.Now.AddDays(1) });
+
+            Assert.AreSame(breaker.Contexts[breaker.GetRuleKey(null, reader.Rules[1])], breaker.FindOpenCircuitContext(null));
+        }
+
         #endregion
+
         #region Rule key creation tests
 
         [Test]
@@ -105,16 +208,16 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
 
     internal class SimpleReader : IRuleReader
     {
-        private readonly IList<ConfigRule> _rules;
+        public IList<ConfigRule> Rules;
 
         public SimpleReader(IList<ConfigRule> rules)
         {
-            _rules = rules;
+            Rules = rules;
         }
 
         public IList<ConfigRule> ReadConfigRules()
         {
-            return _rules;
+            return Rules;
         }
     }
 }

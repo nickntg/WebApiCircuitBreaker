@@ -16,11 +16,11 @@ namespace WebApiCircuitBreaker.Core
         private readonly ILogger _logger;
         private readonly IAddressFinder _addressFinder;
 
-        private readonly ConcurrentDictionary<string, CircuitBreakerContext> _contexts;
+        public readonly ConcurrentDictionary<string, CircuitBreakerContext> Contexts;
 
         public CircuitBreaker(IRuleReader reader, ILogger logger, IAddressFinder addressFinder)
         {
-            _contexts = new ConcurrentDictionary<string, CircuitBreakerContext>();
+            Contexts = new ConcurrentDictionary<string, CircuitBreakerContext>();
             _rules = reader.ReadConfigRules();
             _logger = logger;
             _addressFinder = addressFinder;
@@ -38,7 +38,7 @@ namespace WebApiCircuitBreaker.Core
 
                 var key = GetRuleKey(request, rule);
                 CircuitBreakerContext context;
-                if (_contexts.TryGetValue(key, out context))
+                if (Contexts.TryGetValue(key, out context))
                 {
                     // Is circuit open?
                     if (context.IsCircuitOpen)
