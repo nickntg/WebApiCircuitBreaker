@@ -5,6 +5,10 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiCircuitBreaker.Core", "..\Projects\WebApiCircuitBreaker.Core\WebApiCircuitBreaker.Core.csproj", "{7207C5A1-15C8-4CFB-9B1C-2D410A08EC38}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiCircuitBreaker.DemoSite", "..\Projects\WebApiCircuitBreaker.DemoSite\WebApiCircuitBreaker.DemoSite.csproj", "{D64EE197-D6F5-4972-BE33-2A38494A9F19}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiCircuitBreaker.Extensions", "..\Projects\WebApiCircuitBreaker.Extensions\WebApiCircuitBreaker.Extensions.csproj", "{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{7207C5A1-15C8-4CFB-9B1C-2D410A08EC38}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7207C5A1-15C8-4CFB-9B1C-2D410A08EC38}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7207C5A1-15C8-4CFB-9B1C-2D410A08EC38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D64EE197-D6F5-4972-BE33-2A38494A9F19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D64EE197-D6F5-4972-BE33-2A38494A9F19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D64EE197-D6F5-4972-BE33-2A38494A9F19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D64EE197-D6F5-4972-BE33-2A38494A9F19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
