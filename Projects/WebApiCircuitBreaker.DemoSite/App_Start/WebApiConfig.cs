@@ -1,5 +1,6 @@
 ﻿using System.Web.Http;
 using WebApiCircuitBreaker.Core;
+using WebApiCircuitBreaker.Extensions.Ip;
 using WebApiCircuitBreaker.Extensions.Readers;
 
 namespace WebApiCircuitBreaker.DemoSite
@@ -19,7 +20,7 @@ namespace WebApiCircuitBreaker.DemoSite
                 defaults: new { id = RouteParameter.Optional }
             );
 
-            config.MessageHandlers.Add(new CircuitBreaker(new EmptyReader(), null));
+            config.MessageHandlers.Add(new CircuitBreaker(new EmptyReader(), null, new DefaultAddressFinder()));
         }
     }
 }
