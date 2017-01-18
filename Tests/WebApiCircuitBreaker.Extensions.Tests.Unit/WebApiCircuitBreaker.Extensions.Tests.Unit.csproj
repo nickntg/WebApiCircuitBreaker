@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}</ProjectGuid>
+    <ProjectGuid>{CF283FA2-EDB3-45DA-BBD8-7EDCC8B478F1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WebApiCircuitBreaker.Extensions</RootNamespace>
-    <AssemblyName>WebApiCircuitBreaker.Extensions</AssemblyName>
+    <RootNamespace>WebApiCircuitBreaker.Extensions.Tests.Unit</RootNamespace>
+    <AssemblyName>WebApiCircuitBreaker.Extensions.Tests.Unit</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -30,6 +30,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Castle.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
+      <HintPath>..\..\Solutions\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Moq, Version=4.5.30.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
+      <HintPath>..\..\Solutions\packages\Moq.4.5.30\lib\net45\Moq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.framework, Version=3.6.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\..\Solutions\packages\NUnit.3.6.0\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Web" />
@@ -41,14 +53,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Ip\DefaultAddressFinder.cs" />
+    <Compile Include="Ip\DefaultAddressFinderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Readers\EmptyReader.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\WebApiCircuitBreaker.Core\WebApiCircuitBreaker.Core.csproj">
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Projects\WebApiCircuitBreaker.Core\WebApiCircuitBreaker.Core.csproj">
       <Project>{7207c5a1-15c8-4cfb-9b1c-2d410a08ec38}</Project>
       <Name>WebApiCircuitBreaker.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Projects\WebApiCircuitBreaker.Extensions\WebApiCircuitBreaker.Extensions.csproj">
+      <Project>{1eca4960-6cb8-436f-add0-a89dff2f56d5}</Project>
+      <Name>WebApiCircuitBreaker.Extensions</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -44,6 +44,7 @@
     <Compile Include="CircuitBreaker.cs" />
     <Compile Include="ConfigRule.cs" />
     <Compile Include="EnforcementInfo.cs" />
+    <Compile Include="Interfaces\IAddressFinder.cs" />
     <Compile Include="Interfaces\ILogger.cs" />
     <Compile Include="Interfaces\IRuleReader.cs" />
     <Compile Include="LimitInfo.cs" />

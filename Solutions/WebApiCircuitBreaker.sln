@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiCircuitBreaker.DemoSi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiCircuitBreaker.Extensions", "..\Projects\WebApiCircuitBreaker.Extensions\WebApiCircuitBreaker.Extensions.csproj", "{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiCircuitBreaker.Extensions.Tests.Unit", "..\Tests\WebApiCircuitBreaker.Extensions.Tests.Unit\WebApiCircuitBreaker.Extensions.Tests.Unit.csproj", "{CF283FA2-EDB3-45DA-BBD8-7EDCC8B478F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1ECA4960-6CB8-436F-ADD0-A89DFF2F56D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF283FA2-EDB3-45DA-BBD8-7EDCC8B478F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF283FA2-EDB3-45DA-BBD8-7EDCC8B478F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF283FA2-EDB3-45DA-BBD8-7EDCC8B478F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF283FA2-EDB3-45DA-BBD8-7EDCC8B478F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
