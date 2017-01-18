@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="Ip\DefaultAddressFinderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Readers\EmptyReaderTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
