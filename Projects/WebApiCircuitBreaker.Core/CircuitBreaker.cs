@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using WebApiCircuitBreaker.Core.Extensions;
 using WebApiCircuitBreaker.Core.Interfaces;
 
 namespace WebApiCircuitBreaker.Core
@@ -97,9 +98,7 @@ namespace WebApiCircuitBreaker.Core
                     try
                     {
                         if ((rule.LimitInfo.StatusCode.HasValue && rule.LimitInfo.StatusCode == response.StatusCode) ||
-                            (!rule.LimitInfo.StatusCode.HasValue && !response.IsSuccessStatusCode))
-                            //TODO: This is not exactly right for these purposes...404 is not a successful code according 
-                            //TODO: to this but it can be validly returned by an API...need to write a custom method.
+                            (!rule.LimitInfo.StatusCode.HasValue && !response.StatusCode.IsSuccessful()))
                         {
                             // Error condition matching the rule.
                             context.ApplicableRequests++;
