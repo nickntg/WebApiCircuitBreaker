@@ -7,6 +7,11 @@ namespace WebApiCircuitBreaker.DemoSite.Controllers
         [HttpGet]
         public IHttpActionResult Get(string text)
         {
+            if (text == "err")
+            {
+                return InternalServerError();
+            }
+
             return Ok(text);
         }
     }
