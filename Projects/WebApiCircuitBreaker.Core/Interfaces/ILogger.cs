@@ -7,5 +7,7 @@
         void LogCircuitClosed(string message);
 
         void LogLowWatermark(string message);
+
+        void LogUnexpectedError(string message);
     }
 }
