@@ -15,6 +15,7 @@ namespace WebApiCircuitBreaker.Core
         private readonly IList<ConfigRule> _rules;
         private readonly ILogger _logger;
         private readonly IAddressFinder _addressFinder;
+        private readonly object _monitor = new object();
 
         public readonly ConcurrentDictionary<string, CircuitBreakerContext> Contexts;
 
@@ -28,6 +29,8 @@ namespace WebApiCircuitBreaker.Core
 
         public CircuitBreakerContext FindOpenCircuitContext(HttpRequestMessage request)
         {
+            // TODO: Need to skip whitelisted IPs and block blacklisted IPs.
+            // TODO: Need to check if a server list is specified.
             foreach (var rule in _rules)
             {
                 // Ignore inactive rules.
@@ -62,6 +65,79 @@ namespace WebApiCircuitBreaker.Core
             return null;
         }
 
+        public void CheckCircuit(HttpRequestMessage request, HttpResponseMessage response)
+        {
+            foreach (var rule in _rules)
+            {
+                if (!rule.IsActive)
+                {
+                    continue;
+                }
+
+                var key = GetRuleKey(request, rule);
+                CircuitBreakerContext context;
+
+                if (!Contexts.TryGetValue(key, out context) || context.LastUpdate.Subtract(DateTime.Now).Seconds > 5*60)
+                {
+                    context = new CircuitBreakerContext
+                    {
+                        ApplicableRequests = 0,
+                        ApplicableRule = rule,
+                        IsCircuitOpen = false
+                    };
+                }
+
+                // http://www.interact-sw.co.uk/iangblog/2004/03/23/locking
+                if (!Monitor.TryEnter(_monitor, 1000))
+                {
+                    _logger?.LogUnexpectedError("Failed to enter monitor in 1 second - bad things are happenning.");
+                }
+                else
+                {
+                    try
+                    {
+                        if ((rule.LimitInfo.StatusCode.HasValue && rule.LimitInfo.StatusCode == response.StatusCode) ||
+                            (!rule.LimitInfo.StatusCode.HasValue && !response.IsSuccessStatusCode))
+                            //TODO: This is not exactly right for these purposes...404 is not a successful code according 
+                            //TODO: to this but it can be validly returned by an API...need to write a custom method.
+                        {
+                            // Error condition matching the rule.
+                            context.ApplicableRequests++;
+                            if (context.ApplicableRequests == rule.LimitInfo.LowWatermark)
+                            {
+                                _logger?.LogLowWatermark($"Rule {rule.RuleName} - low watermark exceeded for {request.RequestUri.AbsolutePath}, server {Environment.MachineName}");
+                            }
+                            else if (context.ApplicableRequests >= rule.LimitInfo.HighWatermark)
+                            {
+                                // Just log the circuit open message but don't do anything in this request
+                                // because it has already been computed - the next one will be stoped.
+                                _logger?.LogCircuitOpen($"Rule {rule.RuleName} - high watermark exceeded for {request.RequestUri.AbsolutePath}, server {Environment.MachineName}");
+                                context.IsCircuitOpen = true;
+                                context.OpenUntil = DateTime.Now.AddSeconds(rule.LimitInfo.BreakerIntervalInSeconds);
+                            }
+                        }
+                        else
+                        {
+                            // Need to reset counters.
+                            context.ApplicableRequests = 0;
+                        }
+
+                        context.LastUpdate = DateTime.Now;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogUnexpectedError(ex.ToString());
+                    }
+                    finally
+                    {
+                        Monitor.Exit(_monitor);
+                    }
+                }
+
+                Contexts.AddOrUpdate(key, context, (s, breakerContext) => context);
+            }
+        }
+
         public string GetRuleKey(HttpRequestMessage request, ConfigRule rule)
         {
             return $"{rule.RuleName}_" +
@@ -81,6 +157,9 @@ namespace WebApiCircuitBreaker.Core
 
             // Process the request.
             var response = await base.SendAsync(request, cancellationToken);
+
+            // Check if we need to open the circuit for subsequent requests.
+            CheckCircuit(request, response);
 
             // Return the response.
             return response;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using Moq;
 using NUnit.Framework;
@@ -124,6 +125,186 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
         }
 
         #endregion
+
+        #region Check circuit tests
+
+        [Test]
+        public void NothingOpensWithoutRules()
+        {
+            var breaker = new CircuitBreaker(new SimpleReader(new List<ConfigRule>()), null, null);
+
+            breaker.CheckCircuit(null, null);
+
+            Assert.AreEqual(0, breaker.Contexts.Count);
+        }
+
+        [Test]
+        public void NothingOpensWithEmptyRules()
+        {
+            var breaker = new CircuitBreaker(
+                new SimpleReader(new List<ConfigRule>
+                {
+                    new ConfigRule {IsActive = false},
+                    new ConfigRule {IsActive = false}
+                }), null, null);
+
+            breaker.CheckCircuit(null, null);
+
+            Assert.AreEqual(0, breaker.Contexts.Count);
+        }
+
+        [Test]
+        public void NothingOpensWithSuccessfulStatusCode()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 2, LowWatermark = 1},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo =
+                        new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable}
+                }
+            };
+            var breaker = new CircuitBreaker(new SimpleReader(rules), null, null);
+
+            breaker.CheckCircuit(null, new HttpResponseMessage(HttpStatusCode.Accepted));
+
+            Assert.AreEqual(1, breaker.Contexts.Count);
+            Assert.AreEqual(0, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
+            Assert.IsFalse(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+        }
+
+        [Test]
+        public void NothingOpensWithNotDesignatedResponseCode()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 2, LowWatermark = 1, StatusCode = HttpStatusCode.NotFound},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable}
+                }
+            };
+            var breaker = new CircuitBreaker(new SimpleReader(rules), null, null);
+
+            breaker.CheckCircuit(null, new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            Assert.AreEqual(1, breaker.Contexts.Count);
+            Assert.AreEqual(0, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
+            Assert.IsFalse(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+        }
+
+        [Test]
+        public void VerifyEnteringLowWatermark()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 2, LowWatermark = 1},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable}
+                }
+            };
+            var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
+            mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+
+            breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
+                new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            Assert.AreEqual(1, breaker.Contexts.Count);
+            Assert.AreEqual(1, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
+            Assert.IsFalse(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+
+            mockLogger.Verify(x => x.LogLowWatermark(It.IsAny<string>()), Times.Once);
+        }
+
+        [Test]
+        public void VerifyEnteringHighWatermark()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 3, LowWatermark = 1},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable}
+                }
+            };
+            var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
+            mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+            mockLogger.Setup(x => x.LogCircuitOpen(It.IsAny<string>()));
+
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+
+            for (var i = 1; i <= 3; i++)
+            {
+                breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
+                    new HttpResponseMessage(HttpStatusCode.InternalServerError));
+            }
+
+            Assert.AreEqual(1, breaker.Contexts.Count);
+            Assert.AreEqual(3, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
+            Assert.IsTrue(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+
+            mockLogger.Verify(x => x.LogLowWatermark(It.IsAny<string>()), Times.Once);
+            mockLogger.Verify(x => x.LogCircuitOpen(It.IsAny<string>()), Times.Once);
+        }
+
+        [Test]
+        public void VerifyClearErrorsOnSuccessfulCall()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 3, LowWatermark = 1},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable}
+                }
+            };
+            var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
+            mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+
+            breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
+                new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            Assert.AreEqual(1, breaker.Contexts.Count);
+            Assert.AreEqual(1, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
+            Assert.IsFalse(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+
+            breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
+                new HttpResponseMessage(HttpStatusCode.OK));
+
+            Assert.AreEqual(1, breaker.Contexts.Count);
+            Assert.AreEqual(0, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
+            Assert.IsFalse(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+
+            mockLogger.Verify(x => x.LogLowWatermark(It.IsAny<string>()), Times.Once);
+        }
+
+        #endregion 
 
         #region Rule key creation tests
 
