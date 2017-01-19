@@ -4,7 +4,6 @@ using System.Web.Http;
 using WebApiCircuitBreaker.Core;
 using WebApiCircuitBreaker.Core.Interfaces;
 using WebApiCircuitBreaker.Extensions.Ip;
-using WebApiCircuitBreaker.Extensions.Readers;
 
 namespace WebApiCircuitBreaker.DemoSite
 {
