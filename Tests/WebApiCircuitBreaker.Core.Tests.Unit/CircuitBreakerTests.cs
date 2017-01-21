@@ -67,6 +67,64 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
         }
 
         [Test]
+        public void CircuitClosesOnBlacklistedClient()
+        {
+            var reader = new SimpleReader(new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    RuleName = "rule1",
+                    BlackList = new HashSet<string> {"abc"},
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1}
+                },
+                new ConfigRule {IsActive = true, RuleName = "rule2"}
+            });
+
+            var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
+            mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abc");
+
+            var breaker = new CircuitBreaker(reader, null, mockFinder.Object);
+
+            breaker.Contexts.TryAdd(
+                breaker.GetRuleKey(null, reader.Rules[0]),
+                new CircuitBreakerContext { IsCircuitOpen = false, OpenUntil = DateTime.Now.AddDays(1) });
+
+            Assert.IsNotNull(breaker.FindOpenCircuitContext(new HttpRequestMessage(HttpMethod.Get, string.Empty)));
+
+            mockFinder.Verify(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>()), Times.Once);
+        }
+
+        [Test]
+        public void CircuitNotClosingOnClientThatIsNotBlacklistedWithActiveBlacklist()
+        {
+            var reader = new SimpleReader(new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    RuleName = "rule1",
+                    BlackList = new HashSet<string> {"abc"},
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1}
+                },
+                new ConfigRule {IsActive = true, RuleName = "rule2", BlackList = new HashSet<string> {"abc"}}
+            });
+
+            var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
+            mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abcde");
+
+            var breaker = new CircuitBreaker(reader, null, mockFinder.Object);
+
+            breaker.Contexts.TryAdd(
+                breaker.GetRuleKey(null, reader.Rules[0]),
+                new CircuitBreakerContext { IsCircuitOpen = false, OpenUntil = DateTime.Now.AddDays(1) });
+
+            Assert.IsNull(breaker.FindOpenCircuitContext(new HttpRequestMessage(HttpMethod.Get, string.Empty)));
+
+            mockFinder.Verify(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>()), Times.Exactly(2));
+        }
+
+        [Test]
         public void NothingHappensWithContextThatDesignatesRuleThatHasLapsed()
         {
             var reader = new SimpleReader(new List<ConfigRule>
@@ -200,6 +258,134 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             Assert.AreEqual(1, breaker.Contexts.Count);
             Assert.AreEqual(0, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
             Assert.IsFalse(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+        }
+
+        [Test]
+        public void NothingOpensOnNonApplicableServer()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 2, LowWatermark = 1},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable},
+                    ApplicableServers = new HashSet<string> { "someserver" }
+                }
+            };
+            var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
+            mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+
+            breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
+                new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            Assert.AreEqual(0, breaker.Contexts.Count);
+
+            mockLogger.Verify(x => x.LogLowWatermark(It.IsAny<string>()), Times.Never);
+        }
+
+        [Test]
+        public void NothingOpensWithWhitelistedClient()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 2, LowWatermark = 1},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable},
+                    WhiteList = new HashSet<string> {"abc"}
+                }
+            };
+            var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
+            mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+
+            var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
+            mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abc");
+
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, mockFinder.Object);
+
+            breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
+                new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            Assert.AreEqual(0, breaker.Contexts.Count);
+
+            mockLogger.Verify(x => x.LogLowWatermark(It.IsAny<string>()), Times.Never);
+            mockFinder.Verify(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>()), Times.Once);
+        }
+
+        [Test]
+        public void VerifyEnteringLowWatermarkWithActiveServerList()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 2, LowWatermark = 1},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable},
+                    ApplicableServers = new HashSet<string> { Environment.MachineName }
+                }
+            };
+            var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
+            mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+
+            breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
+                new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            Assert.AreEqual(1, breaker.Contexts.Count);
+            Assert.AreEqual(1, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
+            Assert.IsFalse(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+
+            mockLogger.Verify(x => x.LogLowWatermark(It.IsAny<string>()), Times.Once);
+        }
+
+        [Test]
+        public void VerifyEnteringLowWatermarkWithActiveWhiteListButClientNotInList()
+        {
+            var rules = new List<ConfigRule>
+            {
+                new ConfigRule
+                {
+                    IsActive = true,
+                    LimitInfo = new LimitInfo {BreakerIntervalInSeconds = 1, HighWatermark = 2, LowWatermark = 1},
+                    RuleName = "test",
+                    ApplicabilityScope = ApplicabilityScopeEnum.Global,
+                    RouteScope = RouteScopeEnum.Global,
+                    EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable},
+                    WhiteList = new HashSet<string> {"abc"}
+                }
+            };
+            var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
+            mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+
+            var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
+            mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abcde");
+
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, mockFinder.Object);
+
+            breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
+                new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            Assert.AreEqual(1, breaker.Contexts.Count);
+            Assert.AreEqual(1, breaker.Contexts[breaker.GetRuleKey(null, rules[0])].ApplicableRequests);
+            Assert.IsFalse(breaker.Contexts[breaker.GetRuleKey(null, rules[0])].IsCircuitOpen);
+
+            mockLogger.Verify(x => x.LogLowWatermark(It.IsAny<string>()), Times.Once);
+            mockFinder.Verify(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>()), Times.Once);
         }
 
         [Test]

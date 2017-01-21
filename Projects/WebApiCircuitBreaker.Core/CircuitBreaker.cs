@@ -30,14 +30,23 @@ namespace WebApiCircuitBreaker.Core
 
         public CircuitBreakerContext FindOpenCircuitContext(HttpRequestMessage request)
         {
-            // TODO: Need to skip whitelisted IPs and block blacklisted IPs.
-            // TODO: Need to check if a server list is specified.
             foreach (var rule in _rules)
             {
                 // Ignore inactive rules.
                 if (!rule.IsActive)
                 {
                     continue;
+                }
+
+                if (IsBlackListed(request, rule.BlackList))
+                {
+                    return new CircuitBreakerContext
+                    {
+                        IsCircuitOpen = true,
+                        ApplicableRule = rule,
+                        OpenUntil = DateTime.Now.AddSeconds(rule.LimitInfo.BreakerIntervalInSeconds),
+                        LastUpdate = DateTime.Now
+                    };
                 }
 
                 var key = GetRuleKey(request, rule);
@@ -71,6 +80,16 @@ namespace WebApiCircuitBreaker.Core
             foreach (var rule in _rules)
             {
                 if (!rule.IsActive)
+                {
+                    continue;
+                }
+
+                if (IsWhiteListed(request, rule.WhiteList))
+                {
+                    continue;
+                }
+
+                if (!AppliesToThisServer(rule.ApplicableServers))
                 {
                     continue;
                 }
@@ -162,6 +181,26 @@ namespace WebApiCircuitBreaker.Core
 
             // Return the response.
             return response;
+        }
+
+        private bool IsWhiteListed(HttpRequestMessage request, ICollection<string> whitelist)
+        {
+            return Contains(whitelist, request);
+        }
+
+        private bool IsBlackListed(HttpRequestMessage request, ICollection<string> blacklist)
+        {
+            return Contains(blacklist, request);
+        }
+
+        private bool AppliesToThisServer(ICollection<string> serverList)
+        {
+            return serverList == null || serverList.Count == 0 || serverList.Contains(Environment.MachineName);
+        }
+
+        private bool Contains(ICollection<string> list, HttpRequestMessage message)
+        {
+            return list != null && list.Count != 0 && list.Contains(_addressFinder.FindIpAddress(message));
         }
 
         private Task<HttpResponseMessage> CreateResponse(HttpStatusCode statusCode, DateTime openUntil, Dictionary<string, string> headers)
