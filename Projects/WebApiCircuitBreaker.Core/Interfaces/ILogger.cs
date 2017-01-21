@@ -9,5 +9,7 @@
         void LogLowWatermark(string message);
 
         void LogUnexpectedError(string message);
+
+        void LogRulesLoaded(string message);
     }
 }
