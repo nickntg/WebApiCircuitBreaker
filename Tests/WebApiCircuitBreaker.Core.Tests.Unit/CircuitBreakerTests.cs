@@ -17,7 +17,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
         [Test]
         public void NothingFoundWithNoRules()
         {
-            var breaker = new CircuitBreaker(new SimpleReader(new List<ConfigRule>()), null, null);
+            var breaker = new CircuitBreaker(new SimpleReader(new List<ConfigRule>()), null, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             Assert.IsNull(breaker.FindOpenCircuitContext(null));
         }
@@ -30,7 +31,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                 {
                     new ConfigRule {IsActive = false},
                     new ConfigRule {IsActive = false}
-                }), null, null);
+                }), null, null, new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             Assert.IsNull(breaker.FindOpenCircuitContext(null));
         }
@@ -43,7 +44,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                 {
                     new ConfigRule {IsActive = true, RuleName = "rule1"},
                     new ConfigRule {IsActive = true, RuleName = "rule2"}
-                }), null, null);
+                }), null, null, new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             Assert.IsNull(breaker.FindOpenCircuitContext(null));
         }
@@ -57,7 +58,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                 new ConfigRule {IsActive = true, RuleName = "rule2"}
             });
 
-            var breaker = new CircuitBreaker(reader, null, null);
+            var breaker = new CircuitBreaker(reader, null, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.Contexts.TryAdd(
                 breaker.GetRuleKey(null, reader.Rules[0]),
@@ -84,7 +86,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
             mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abc");
 
-            var breaker = new CircuitBreaker(reader, null, mockFinder.Object);
+            var breaker = new CircuitBreaker(reader, null, mockFinder.Object,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.Contexts.TryAdd(
                 breaker.GetRuleKey(null, reader.Rules[0]),
@@ -113,7 +116,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
             mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abcde");
 
-            var breaker = new CircuitBreaker(reader, null, mockFinder.Object);
+            var breaker = new CircuitBreaker(reader, null, mockFinder.Object,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.Contexts.TryAdd(
                 breaker.GetRuleKey(null, reader.Rules[0]),
@@ -133,7 +137,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                 new ConfigRule {IsActive = true, RuleName = "rule2"}
             });
 
-            var breaker = new CircuitBreaker(reader, null, null);
+            var breaker = new CircuitBreaker(reader, null, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.Contexts.TryAdd(
                 breaker.GetRuleKey(null, reader.Rules[0]),
@@ -151,7 +156,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                 new ConfigRule {IsActive = true, RuleName = "rule2"}
             });
 
-            var breaker = new CircuitBreaker(reader, null, null);
+            var breaker = new CircuitBreaker(reader, null, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.Contexts.TryAdd(
                 breaker.GetRuleKey(null, reader.Rules[0]),
@@ -169,7 +175,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                 new ConfigRule {IsActive = true, RuleName = "rule2"}
             });
 
-            var breaker = new CircuitBreaker(reader, null, null);
+            var breaker = new CircuitBreaker(reader, null, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.Contexts.TryAdd(
                 breaker.GetRuleKey(null, reader.Rules[0]),
@@ -189,7 +196,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
         [Test]
         public void NothingOpensWithoutRules()
         {
-            var breaker = new CircuitBreaker(new SimpleReader(new List<ConfigRule>()), null, null);
+            var breaker = new CircuitBreaker(new SimpleReader(new List<ConfigRule>()), null, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(null, null);
 
@@ -204,7 +212,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                 {
                     new ConfigRule {IsActive = false},
                     new ConfigRule {IsActive = false}
-                }), null, null);
+                }), null, null, new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(null, null);
 
@@ -227,7 +235,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                         new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable}
                 }
             };
-            var breaker = new CircuitBreaker(new SimpleReader(rules), null, null);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), null, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(null, new HttpResponseMessage(HttpStatusCode.Accepted));
 
@@ -251,7 +260,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
                     EnforcementInfo = new EnforcementInfo {ResponseCodeOnCircuitOpen = HttpStatusCode.ServiceUnavailable}
                 }
             };
-            var breaker = new CircuitBreaker(new SimpleReader(rules), null, null);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), null, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(null, new HttpResponseMessage(HttpStatusCode.InternalServerError));
 
@@ -279,7 +289,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
 
-            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
                 new HttpResponseMessage(HttpStatusCode.InternalServerError));
@@ -311,7 +322,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
             mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abc");
 
-            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, mockFinder.Object);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, mockFinder.Object,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
                 new HttpResponseMessage(HttpStatusCode.InternalServerError));
@@ -341,7 +353,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
 
-            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
                 new HttpResponseMessage(HttpStatusCode.InternalServerError));
@@ -375,7 +388,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
             mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abcde");
 
-            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, mockFinder.Object);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, mockFinder.Object,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
                 new HttpResponseMessage(HttpStatusCode.InternalServerError));
@@ -406,7 +420,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
 
-            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
                 new HttpResponseMessage(HttpStatusCode.InternalServerError));
@@ -437,7 +452,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
             mockLogger.Setup(x => x.LogCircuitOpen(It.IsAny<string>()));
 
-            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             for (var i = 1; i <= 3; i++)
             {
@@ -471,7 +487,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
 
-            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null);
+            var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
 
             breaker.CheckCircuit(new HttpRequestMessage(HttpMethod.Get, "http://localhost/some/url"),
                 new HttpResponseMessage(HttpStatusCode.InternalServerError));
@@ -498,7 +515,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
         public void EnsureSimpleRuleKeyIsValid()
         {
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
-            var breaker = new CircuitBreaker(new EmptyReader(), null, mockFinder.Object);
+            var breaker = new CircuitBreaker(new EmptyReader(), null, mockFinder.Object,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
             var msg = new HttpRequestMessage();
             var rule = new ConfigRule
             {
@@ -516,7 +534,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
         public void EnsurePerRouteRuleKeyIsValid()
         {
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
-            var breaker = new CircuitBreaker(new EmptyReader(), null, mockFinder.Object);
+            var breaker = new CircuitBreaker(new EmptyReader(), null, mockFinder.Object,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
             var msg = new HttpRequestMessage {RequestUri = new Uri("http://localhost/some/url/?param=value")};
             var rule = new ConfigRule
             {
@@ -536,7 +555,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
             mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("::1");
 
-            var breaker = new CircuitBreaker(new EmptyReader(), null, mockFinder.Object);
+            var breaker = new CircuitBreaker(new EmptyReader(), null, mockFinder.Object,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
             var msg = new HttpRequestMessage();
             var rule = new ConfigRule
             {
@@ -556,7 +576,8 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
             mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("::1");
 
-            var breaker = new CircuitBreaker(new EmptyReader(), null, mockFinder.Object);
+            var breaker = new CircuitBreaker(new EmptyReader(), null, mockFinder.Object,
+                new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
             var msg = new HttpRequestMessage { RequestUri = new Uri("http://localhost/some/url/?param=value") };
             var rule = new ConfigRule
             {
@@ -582,7 +603,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             Rules = rules;
         }
 
-        public IList<ConfigRule> ReadConfigRules()
+        public IList<ConfigRule> ReadConfigRules(string machineName)
         {
             return Rules;
         }

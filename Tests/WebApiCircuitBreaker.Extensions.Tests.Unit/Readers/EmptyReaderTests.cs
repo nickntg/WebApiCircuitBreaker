@@ -10,7 +10,7 @@ namespace WebApiCircuitBreaker.Extensions.Tests.Unit.Readers
         public void EnsureEmptyReaderReturnsEmptyList()
         {
             var reader = new EmptyReader();
-            var list = reader.ReadConfigRules();
+            var list = reader.ReadConfigRules(string.Empty);
 
             Assert.IsNotNull(list);
             Assert.AreEqual(0, list.Count);

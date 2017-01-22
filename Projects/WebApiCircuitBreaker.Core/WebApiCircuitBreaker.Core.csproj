@@ -52,6 +52,9 @@
     <Compile Include="LimitInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RouteScopeEnum.cs" />
+    <Compile Include="RuleLoadingStrategy.cs" />
+    <Compile Include="RuleLoadingIntervalEnum.cs" />
+    <Compile Include="RuleManager.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

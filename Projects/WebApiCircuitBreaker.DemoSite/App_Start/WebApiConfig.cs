@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Web.Http;
 using WebApiCircuitBreaker.Core;
@@ -22,13 +23,18 @@ namespace WebApiCircuitBreaker.DemoSite
                 defaults: new { id = RouteParameter.Optional }
             );
 
-            config.MessageHandlers.Add(new CircuitBreaker(new SimpleReader(), null, new DefaultAddressFinder()));
+            config.MessageHandlers.Add(new CircuitBreaker(new SimpleReader(), null, new DefaultAddressFinder(),
+                new RuleLoadingStrategy
+                {
+                    RuleLoadingInteval = RuleLoadingIntervalEnum.LoadAndRefreshPeriodically,
+                    RuleLoadingTimeSpan = new TimeSpan(0, 0, 5, 0)
+                }));
         }
     }
 
     public class SimpleReader : IRuleReader
     {
-        public IList<ConfigRule> ReadConfigRules()
+        public IList<ConfigRule> ReadConfigRules(string machineName)
         {
             return new List<ConfigRule>
             {

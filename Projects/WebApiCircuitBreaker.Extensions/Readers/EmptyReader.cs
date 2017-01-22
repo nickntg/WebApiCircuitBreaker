@@ -6,7 +6,7 @@ namespace WebApiCircuitBreaker.Extensions.Readers
 {
     public class EmptyReader : IRuleReader
     {
-        public IList<ConfigRule> ReadConfigRules()
+        public IList<ConfigRule> ReadConfigRules(string machineName)
         {
             return new List<ConfigRule>();
         }

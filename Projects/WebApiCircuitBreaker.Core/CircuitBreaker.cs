@@ -13,24 +13,24 @@ namespace WebApiCircuitBreaker.Core
 {
     public class CircuitBreaker : DelegatingHandler
     {
-        private readonly IList<ConfigRule> _rules;
         private readonly ILogger _logger;
         private readonly IAddressFinder _addressFinder;
+        private readonly RuleManager _ruleManager;
         private readonly object _monitor = new object();
 
         public readonly ConcurrentDictionary<string, CircuitBreakerContext> Contexts;
 
-        public CircuitBreaker(IRuleReader reader, ILogger logger, IAddressFinder addressFinder)
+        public CircuitBreaker(IRuleReader reader, ILogger logger, IAddressFinder addressFinder, RuleLoadingStrategy ruleLoadStrategy)
         {
             Contexts = new ConcurrentDictionary<string, CircuitBreakerContext>();
-            _rules = reader.ReadConfigRules();
+            _ruleManager = new RuleManager(reader, logger, ruleLoadStrategy);
             _logger = logger;
             _addressFinder = addressFinder;
         }
 
         public CircuitBreakerContext FindOpenCircuitContext(HttpRequestMessage request)
         {
-            foreach (var rule in _rules)
+            foreach (var rule in _ruleManager.Rules)
             {
                 // Ignore inactive rules.
                 if (!rule.IsActive)
@@ -77,7 +77,7 @@ namespace WebApiCircuitBreaker.Core
 
         public void CheckCircuit(HttpRequestMessage request, HttpResponseMessage response)
         {
-            foreach (var rule in _rules)
+            foreach (var rule in _ruleManager.Rules)
             {
                 if (!rule.IsActive)
                 {
