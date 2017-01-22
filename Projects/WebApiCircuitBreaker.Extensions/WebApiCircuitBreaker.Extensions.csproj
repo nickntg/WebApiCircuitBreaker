@@ -53,7 +53,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Readers\EmptyReader.cs" />
-    <Compile Include="Readers\JsonReader.cs" />
+    <Compile Include="Readers\JsonHttpReader.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\WebApiCircuitBreaker.Core\WebApiCircuitBreaker.Core.csproj">
