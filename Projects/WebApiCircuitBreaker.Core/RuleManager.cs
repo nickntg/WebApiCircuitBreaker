@@ -29,7 +29,7 @@ namespace WebApiCircuitBreaker.Core
 
         public IList<ConfigRule> Rules => _isPrimary ? _primary : _secondary;
 
-        private async void LoadRules()
+        private async Task LoadRules()
         {
             while (true)
             {
