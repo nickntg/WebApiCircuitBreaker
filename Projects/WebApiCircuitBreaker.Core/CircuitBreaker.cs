@@ -148,11 +148,10 @@ namespace WebApiCircuitBreaker.Core
                     }
                     finally
                     {
+                        Contexts.AddOrUpdate(key, context, (s, breakerContext) => context);
                         Monitor.Exit(_monitor);
                     }
                 }
-
-                Contexts.AddOrUpdate(key, context, (s, breakerContext) => context);
             }
         }
 
