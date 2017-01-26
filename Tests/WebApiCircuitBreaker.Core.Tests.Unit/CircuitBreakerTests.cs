@@ -288,6 +288,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             };
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+            mockLogger.Setup(x => x.LogRulesLoaded(It.IsAny<string>()));
 
             var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
                 new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
@@ -318,6 +319,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             };
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+            mockLogger.Setup(x => x.LogRulesLoaded(It.IsAny<string>()));
 
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
             mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abc");
@@ -352,6 +354,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             };
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+            mockLogger.Setup(x => x.LogRulesLoaded(It.IsAny<string>()));
 
             var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
                 new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
@@ -384,6 +387,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             };
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+            mockLogger.Setup(x => x.LogRulesLoaded(It.IsAny<string>()));
 
             var mockFinder = new Mock<IAddressFinder>(MockBehavior.Strict);
             mockFinder.Setup(x => x.FindIpAddress(It.IsAny<HttpRequestMessage>())).Returns("abcde");
@@ -419,6 +423,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             };
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+            mockLogger.Setup(x => x.LogRulesLoaded(It.IsAny<string>()));
 
             var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
                 new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
@@ -451,6 +456,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
             mockLogger.Setup(x => x.LogCircuitOpen(It.IsAny<string>()));
+            mockLogger.Setup(x => x.LogRulesLoaded(It.IsAny<string>()));
 
             var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
                 new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
@@ -486,6 +492,7 @@ namespace WebApiCircuitBreaker.Core.Tests.Unit
             };
             var mockLogger = new Mock<ILogger>(MockBehavior.Strict);
             mockLogger.Setup(x => x.LogLowWatermark(It.IsAny<string>()));
+            mockLogger.Setup(x => x.LogRulesLoaded(It.IsAny<string>()));
 
             var breaker = new CircuitBreaker(new SimpleReader(rules), mockLogger.Object, null,
                 new RuleLoadingStrategy {RuleLoadingInteval = RuleLoadingIntervalEnum.LoadOnce});
